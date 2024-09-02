@@ -1,40 +1,64 @@
 <?php
-//TODO: Clase de Actividades
-require_once('../config/comun.php');
+require_once '../config/IConeccionBaseDatos.php';
+require_once '../config/RepositorioGenerico.php';
+require_once '../models/Interfaces/IActividades.Model.php';
+require_once '../dto/ActividadDTO.php';
 
-class Actividades
+class Actividades extends RepositorioGenerico implements IActividades
 {
-    //TODO: Implementar los metodos de la clase Actividades
-    public $tabla;
-
-    public function __construct()
+    public function __construct(IConeccionBaseDatos $dbConnection)
     {
-        $this->tabla = new ClaseTabla("actividades","id_actividad");
-        $this->tabla->AgregarCampo("nombre");
-        $this->tabla->AgregarCampo("id_tipo_actividad");
+        parent::__construct($dbConnection, 'actividades', 'idactividad', ['nombre', 'descripcion']);
     }
+
     public function todos() 
     {
-        $datos = $this->tabla->DevolverTodos();
-        return $datos;
+        $datos = $this->getAll();
+        $listaDTOs = [];
+
+        while ($fila = mysqli_fetch_assoc($datos)) {
+            $dto = new ActividadDTO(
+                $fila['idactividad'], 
+                $fila['nombre'], 
+                $fila['descripcion']
+            );
+            $listaDTOs[] = $dto;
+        }
+
+        return $listaDTOs;
     }
+
     public function uno($id_actividad) 
     {
-        $datos = $this->tabla->DevolverUno($id_actividad);
-        return $datos;
+        $datos = $this->getOneById($id_actividad);
+        $listaDTOs = [];
+
+        while ($fila = mysqli_fetch_assoc($datos)) {
+            $dto = new ActividadDTO(
+                $fila['id_actividad'], 
+                $fila['nombre'], 
+                $fila['id_tipo_actividad']
+            );
+            $listaDTOs[] = $dto;
+        }
+
+        return $listaDTOs;
     }
-    public function insertar($nombre,$id_tipo_actividad ) 
+
+    public function insertar($nombre, $id_tipo_actividad) 
     {
-        $valores = array($nombre,$id_tipo_actividad );
-        return $this->tabla->InsertarRegistro($valores);
+        $valores = ['nombre' => $nombre, 'id_tipo_actividad' => $id_tipo_actividad];
+        return $this->insert($valores);
     }
-    public function actualizar($id_actividad, $nombre,$id_tipo_actividad ) 
+
+    public function actualizar($id_actividad, $nombre, $id_tipo_actividad) 
     {
-        $valores = array($nombre,$id_tipo_actividad);
-        return $this->tabla->ActualizarRegistro($id_actividad, $valores);
+        $valores = ['nombre' => $nombre, 'id_tipo_actividad' => $id_tipo_actividad];
+        return $this->update($id_actividad, $valores);
     }
+
     public function eliminar($id_actividad) 
     {
-        $this->tabla->EliminarRegistro($id_actividad);
+        return $this->delete($id_actividad);
     }
 }

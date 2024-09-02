@@ -8,53 +8,54 @@ $method = $_SERVER["REQUEST_METHOD"];
 if ($method == "OPTIONS") {
     die();
 }
-//TODO: controlador de ACTIVIDADES
-require_once('../models/actividades.model.php');
-//error_reporting(0);
-$actividades = new Actividades;
 
-switch ($_GET["op"]) {
-        //TODO: operaciones de actividades
+require_once '../factory/ActividadesFactory.php';
+require_once '../config/ConeccionBaseDatos.php';
 
-    case 'todos': //TODO: Procedimiento para cargar todos los datos del actividades
-        $datos = array(); // Defino un arreglo para almacenar los valores que vienen de la clase actividades.model.php
-        
-        $datos = $actividades->todos(); // Llamo al metodo todos de la clase actividades.model.php
-        while ($row = mysqli_fetch_assoc($datos)) //Ciclo de repeticion para asociar los valor almancenados en la variable $datos
-        {
-            $todos[] = $row;
+// Crear instancia de la conexión a la base de datos
+$dbConnection = new ConeccionBaseDatos();
+
+// Crear instancia de IActividades utilizando la fábrica
+$actividades = ActividadesFactory::create($dbConnection);
+
+switch ($method) {
+    case 'GET':
+
+        if (isset($_GET['id'])) {
+            // Obtener un registro específico
+            $id_actividad = $_GET['id'];
+            $datos = $actividades->uno($id_actividad);
+            echo json_encode($datos);
+        } else {
+            $datos = $actividades->todos();
+            echo json_encode($datos);
         }
-        echo json_encode($todos);
         break;
-    case 'uno': //TODO: procedimiento para obtener un registro de la base de datos
-        $id_actividad = $_POST["id_actividad"];
-        $datos = array();
-        $datos = $actividades->uno($id_actividad);
-        $res = mysqli_fetch_assoc($datos);
-        echo json_encode($res);
-        break;
-        
-    case 'insertar':  //TODO: Procedimiento para insertar un actividades en la base de datos
-        $nombre = $_POST["nombre"];
-        $id_tipo_actividad = $_POST["id_tipo_actividad"];
-        $datos = array();
-        $datos = $actividades->insertar($nombre,$id_tipo_actividad);
-        //echo json_encode($datos);
+
+    case 'POST':
+        $nombre = $_POST['nombre'];
+        $id_tipo_actividad = $_POST['id_tipo_actividad'];
+        $idInsertado = $actividades->insertar($nombre, $id_tipo_actividad);
+        echo json_encode(["id_insertado" => $idInsertado]);
         break;
         
-    case 'actualizar':  //TODO: Procedimiento para actualizar un Actividades en la base de datos
-        $id_actividad = $_POST["id_actividad"];
-        $nombre = $_POST["nombre"];
-        $id_tipo_actividad = $_POST["id_tipo_actividad"];
-        $datos = array();
-        $datos = $actividades->actualizar($id_actividad, $nombre,$id_tipo_actividad);
-        echo json_encode($datos);
+    case 'PUT':
+        parse_str(file_get_contents("php://input"), $put_vars);
+        $id_actividad = $put_vars['id_actividad'];
+        $nombre = $put_vars['nombre'];
+        $id_tipo_actividad = $put_vars['id_tipo_actividad'];
+        $resultado = $actividades->actualizar($id_actividad, $nombre, $id_tipo_actividad);
+        echo json_encode(["resultado" => $resultado]);
         break;
         
-    case 'eliminar': //TODO: Procedimiento para eliminar un actividades en la base de datos
-        $id_actividad = $_POST["id_actividad"];
-        $datos = array();
-        $datos = $actividades->eliminar($id_actividad);
-        echo json_encode($datos);
+    case 'DELETE':
+        parse_str(file_get_contents("php://input"), $delete_vars);
+        $id_actividad = $delete_vars['id_actividad'];
+        $resultado = $actividades->eliminar($id_actividad);
+        echo json_encode(["resultado" => $resultado]);
+        break;
+        
+        default:
+        echo json_encode(["error" => "Método no permitido"]);
         break;
 }
